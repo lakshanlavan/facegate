@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=CodeGloFix Live View
+GenericName=Door Display
+Comment=CodeGloFix Access Control — live gate camera and access status (PyQt full-screen display)
+Exec=__PROJECT_DIR__/kiosk/run_live_display.sh
+Icon=__ICON__
+Terminal=false
+Categories=Utility;
+X-GNOME-Autostart-enabled=true
+X-GNOME-Autostart-Delay=5
+StartupNotify=false

@@ -1,0 +1,48 @@
+# ── Python ──────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+venv/
+.venv/
+env/
+wheelhouse/
+build/
+dist/
+
+# ── Secrets / environment ───────────────────────────
+.env
+.env.*
+*.env
+!deploy/*.env.template
+*.pem
+*.key
+
+# ── Runtime data (personal / biometric — NEVER commit) ─
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+enrolments/
+*.npz
+*.npy
+backups/
+*.tar.gz
+
+# ── Face model weights (downloaded by insightface) ──
+*.onnx
+models/
+.insightface/
+
+# ── Logs ────────────────────────────────────────────
+*.log
+
+# ── Screenshots containing real member data ────────
+GYMLOCK/
+
+# ── Editor / OS / local tooling ─────────────────────
+.claude/
+.vscode/
+.idea/
+*.swp
+.DS_Store

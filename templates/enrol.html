@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#DD2C50">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CodeGloFix">
+<title>CodeGloFix — Enrol Member</title>
+<link rel="icon" type="image/png" href="/static/codeglofix.png">
+<link rel="stylesheet" href="/static/css/theme.css">
+<style>
+body { height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+/* ══════════════════════════════════════════════════════
+   RESPONSIVE — ≤ 820px  (tablet / phone)
+══════════════════════════════════════════════════════ */
+@media (max-width: 820px) {
+  /* Allow page to scroll on mobile — the fixed-height layout
+     doesn't make sense when camera + panel are stacked */
+  body { height: auto; min-height: 100dvh; overflow-y: auto; }
+
+  .body {
+    flex-direction: column;
+    overflow: visible;
+    padding: 8px 10px 16px;
+    gap: 10px;
+  }
+
+  /* Camera: full width, keep aspect ratio, no arbitrary minimums */
+  .cam-wrap {
+    flex: none;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    aspect-ratio: 4 / 3;
+    align-self: stretch;
+  }
+
+  /* Side panel: full width below camera */
+  .panel {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    flex: none;
+    flex-shrink: unset;
+    overflow-y: visible;
+    max-height: none;
+  }
+
+  /* Enrolled member list: allow reasonable height on mobile */
+  .enrolled-wrap { min-height: 220px; max-height: 420px; }
+
+  /* Navbar: compress on mobile */
+  .navbar { height: 64px; padding: 0 12px; gap: 6px; }
+  .navbar .brand-sub  { display: none; }
+  .navbar .brand-logo { height: 48px; max-width: 160px; }
+  .navbar .nav-tab    { padding: 5px 8px; gap: 3px; font-size: 11px; }
+  .navbar .nav-tab svg { width: 14px; height: 14px; }
+}
+
+@media (max-width: 480px) {
+  .body { padding: 6px 8px 14px; }
+  .slot-grid { gap: 5px; }
+  .navbar .brand-name { display: none; }
+  .navbar .brand-logo { height: 44px; }
+  /* Nav tab labels: icon only */
+  .navbar .nav-tab { font-size: 0; }
+  .navbar .nav-tab svg { width: 16px; height: 16px; font-size: 0; }
+  /* Keep the clock readable */
+  .clock { font-size: 11px; }
+}
+
+/* Enrol page brand logo sizing */
+.navbar {
+  height: 74px;
+}
+.navbar .brand-logo {
+  height: 56px;
+  width: auto;
+  max-width: 190px;
+  object-fit: contain;
+}
+.navbar .brand {
+  gap: 14px;
+  margin-right: 12px;
+}
+
+.body {
+  display: flex;
+  flex: 1;
+  gap: 10px;
+  padding: 8px 16px 10px;
+  min-height: 0;
+  overflow: hidden;
+  justify-content: center;
+}
+
+/* Camera */
+.cam-wrap {
+  flex: 0 1 680px;
+  max-width: 680px;
+  aspect-ratio: 4 / 3;
+  align-self: flex-start;
+  background: #000;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cam-wrap img { width: 100%; height: 100%; object-fit: contain; }
+.cam-badge {
+  position: absolute;
+  top: 8px; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 5px;
+  background: rgba(12,15,30,0.8);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 3px 10px;
+  pointer-events: none;
+}
+.cam-badge-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 5px rgba(221,44,80,0.5); animation: dg-pulse 2s infinite; }
+.cam-badge-label { font-size: 10px; color: var(--t2); font-weight: 600; letter-spacing: 1px; }
+
+#gate-msg {
+  position: absolute;
+  bottom: 10px; left: 50%; transform: translateX(-50%);
+  background: rgba(12,15,30,0.8);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 4px 14px;
+  font-size: 12px; color: var(--t2); font-weight: 500;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* Right panel */
+.panel {
+  flex: 1 1 380px;
+  min-width: 300px;
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+}
+.panel::-webkit-scrollbar { width: 3px; }
+
+/* Slot grid */
+.slot-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 8px; }
+.slot {
+  aspect-ratio: 3/4;
+  background: var(--bg-input);
+  border: 1px dashed var(--border-2);
+  border-radius: var(--rs);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  overflow: hidden;
+}
+.slot:hover { border-color: var(--accent); background-color: var(--accent-dim); }
+.slot.captured { border-color: var(--green); border-style: solid; }
+.slot-remove {
+  position: absolute;
+  top: 5px; right: 5px;
+  width: 20px; height: 20px;
+  border: 1px solid rgba(239,68,68,0.55);
+  border-radius: 50%;
+  background: rgba(12,15,30,0.88);
+  color: var(--red);
+  font-size: 13px;
+  line-height: 18px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 3;
+}
+.slot.captured .slot-remove { display: flex; }
+.slot-remove:hover { background: var(--red-dim); }
+.slot-icon { font-size: 22px; }
+.slot-label { font-size: 10px; color: var(--t3); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* Progress bar */
+.progress-bar { height: 3px; background: var(--bg-hover); border-radius: 3px; overflow: hidden; margin-bottom: 4px; }
+.progress-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.4s; width: 0%; }
+
+/* Enrolled list (compact) */
+.enrolled-wrap {
+  flex: 1;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+.enrolled-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.enrolled-title { font-size: 10px; font-weight: 700; color: var(--t3); text-transform: uppercase; letter-spacing: 1.5px; }
+.enrolled-scroll { flex: 1; overflow-y: auto; }
+.enrolled-scroll::-webkit-scrollbar { width: 3px; }
+
+/* Error / success */
+#enrol-err { font-size: 12px; color: var(--red); min-height: 16px; }
+#name-err  { font-size: 11px; color: var(--red); margin-top: 2px; min-height: 14px; }
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="brand" href="/">
+    <img class="brand-logo" src="/static/codeglofix.png" alt="CodeGloFix" onerror="this.style.display='none'">
+    <div><div class="brand-name">CodeGloFix</div><div class="brand-sub">Member Enrolment</div></div>
+  </a>
+  <div class="nav-sep"></div>
+  <a href="/enrol" class="nav-tab active">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="16" y1="11" x2="22" y2="11"/></svg>Enrol
+  </a>
+  <a href="/enrol_remote" class="nav-tab">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="2" width="14" height="20" rx="2"/><circle cx="12" cy="17" r="1"/></svg>Remote Enrol
+  </a>
+  <a href="/admin" class="nav-tab">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Admin
+  </a>
+  <div class="nav-right">
+    <div class="clock" id="clock">--:--:--</div>
+  </div>
+</nav>
+
+<div class="body">
+  <!-- Camera -->
+  <div class="cam-wrap">
+    <img id="feed" src="/video_feed?clean=1" alt="Camera loading…">
+    <div class="cam-badge"><span class="cam-badge-dot"></span><span class="cam-badge-label">CAMERA</span></div>
+    <div id="gate-msg">Position your face in frame</div>
+  </div>
+
+  <!-- Right panel -->
+  <div class="panel">
+
+    <!-- Name input -->
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);padding:14px">
+      <div class="form-group" style="margin-bottom:4px">
+        <label class="form-label">Member Name</label>
+        <div style="display:flex;gap:8px">
+          <input class="form-input" type="text" id="enrol-name" placeholder="Full name…" style="flex:1">
+          <button class="btn btn-outline btn-sm" onclick="resetEnrol()" title="Reset">↺</button>
+        </div>
+      </div>
+      <div id="name-err"></div>
+
+      <div class="form-group" style="margin-top:10px;margin-bottom:0">
+        <label class="form-label">Phone Number <span style="color:var(--t3);font-weight:500">(optional)</span></label>
+        <input class="form-input" type="tel" id="enrol-phone" placeholder="07XXXXXXXX">
+      </div>
+
+      <div class="form-group" style="margin-top:10px;margin-bottom:0">
+        <label class="form-label">Member ID <span style="color:var(--t3);font-weight:500">(optional)</span></label>
+        <input class="form-input" type="text" id="enrol-member-code" placeholder="GYM001, M001, CARD-005" autocomplete="off">
+        <div style="font-size:10px;color:var(--t3);margin-top:4px">Optional. Leave blank to auto-generate.</div>
+      </div>
+    </div>
+
+    <!-- Capture slots -->
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);padding:14px">
+      <div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px">Face Captures</div>
+      <div class="slot-grid">
+        <div class="slot" id="slot-1" onclick="captureSlot(1)">
+          <button class="slot-remove" type="button" onclick="removeSlot(event, 1)" title="Remove and retake">×</button>
+          <div class="slot-icon" id="slot-icon-1">👤</div>
+          <div class="slot-label">Front</div>
+        </div>
+        <div class="slot" id="slot-2" onclick="captureSlot(2)">
+          <button class="slot-remove" type="button" onclick="removeSlot(event, 2)" title="Remove and retake">×</button>
+          <div class="slot-icon" id="slot-icon-2">↔</div>
+          <div class="slot-label">Side</div>
+        </div>
+        <div class="slot" id="slot-3" onclick="captureSlot(3)">
+          <button class="slot-remove" type="button" onclick="removeSlot(event, 3)" title="Remove and retake">×</button>
+          <div class="slot-icon" id="slot-icon-3">↕</div>
+          <div class="slot-label">Angle</div>
+        </div>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="capture-bar"></div></div>
+      <div style="font-size:10px;color:var(--t3);text-align:center;margin-top:2px" id="capture-count">0 of 3 captured</div>
+    </div>
+
+    <div id="enrol-err"></div>
+
+    <button class="btn btn-primary" id="confirm-btn" onclick="confirmEnrol()" disabled style="width:100%;justify-content:center;opacity:0.45">
+      Register Member
+    </button>
+
+    <!-- Enrolled members list -->
+    <div class="enrolled-wrap">
+      <div class="enrolled-head">
+        <span class="enrolled-title">Registered Members</span>
+        <span class="count-badge" id="enrolled-count">—</span>
+      </div>
+      <div class="enrolled-scroll">
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead><tr><th style="padding:7px 10px;text-align:left;font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--border);background:rgba(0,0,0,0.2)">#</th><th style="padding:7px 10px;text-align:left;font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--border);background:rgba(0,0,0,0.2)">Name</th><th style="padding:7px 10px;text-align:left;font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--border);background:rgba(0,0,0,0.2)">Registered</th><th style="padding:7px 10px;text-align:left;font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--border);background:rgba(0,0,0,0.2)">Status</th><th style="padding:7px 10px;border-bottom:1px solid var(--border);background:rgba(0,0,0,0.2)"></th></tr></thead>
+          <tbody id="enrolled-list"><tr><td colspan="5" style="text-align:center;color:var(--t3);padding:20px;font-size:12px">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="bottom-bar">
+  <span><span class="status-dot"></span> Member enrolment — 3 face captures required</span>
+  <span style="margin-left:auto">CodeGloFix &copy; <span id="foot-year"></span></span>
+</div>
+
+<div id="toast"></div>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/enrol.js?v=4_phone"></script>
+</body>
+</html>

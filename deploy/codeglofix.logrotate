@@ -1,0 +1,27 @@
+# /etc/logrotate.d/codeglofix  (production)
+# Rotates the CodeGloFix backend + live-display logs so a 24/7 PC never fills its
+# disk. copytruncate: systemd (StandardOutput=append:) and the live-display
+# wrapper hold the files open, so rename-based rotation would orphan the open FDs.
+
+/var/log/codeglofix/backend.log {
+    daily
+    rotate 14
+    missingok
+    notifempty
+    compress
+    delaycompress
+    copytruncate
+    su __USER__ __USER__
+    create 0640 __USER__ __USER__
+}
+
+/var/log/codeglofix/live_display.log {
+    weekly
+    rotate 6
+    missingok
+    notifempty
+    compress
+    copytruncate
+    su __USER__ __USER__
+    create 0640 __USER__ __USER__
+}

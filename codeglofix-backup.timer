@@ -1,0 +1,13 @@
+[Unit]
+Description=CodeGloFix daily backup timer
+
+[Timer]
+# Run daily at 03:30. If the PC was off at that time (e.g. gym closed),
+# Persistent=true runs the missed backup shortly after the next boot.
+OnCalendar=*-*-* 03:30:00
+Persistent=true
+RandomizedDelaySec=300
+Unit=codeglofix-backup@%i.service
+
+[Install]
+WantedBy=timers.target

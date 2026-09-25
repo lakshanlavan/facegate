@@ -1,0 +1,42 @@
+{
+  "name": "CodeGloFix",
+  "short_name": "CodeGloFix",
+  "description": "Gym Access Control System",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0C0F1E",
+  "theme_color": "#DD2C50",
+  "orientation": "any",
+  "lang": "en",
+  "icons": [
+    {
+      "src": "/static/codeglofix.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/codeglofix.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Live View",
+      "url": "/",
+      "description": "Gate camera feed"
+    },
+    {
+      "name": "Admin Panel",
+      "url": "/admin",
+      "description": "Manage members and settings"
+    },
+    {
+      "name": "Enrol Member",
+      "url": "/enrol",
+      "description": "Register a new member"
+    }
+  ]
+}

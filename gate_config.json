@@ -1,0 +1,11 @@
+{
+  "min_face_area": 12000,
+  "center_roi": 0.75,
+  "cooldown_secs": 5.0,
+  "relay_port": "auto",
+  "relay_baudrate": 115200,
+  "relay_auto_connect": true,
+  "expiry_warning_days": 7,
+  "allow_expiring_members": true,
+  "emergency_lock": false
+}

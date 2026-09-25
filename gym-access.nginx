@@ -1,0 +1,117 @@
+# /etc/nginx/sites-available/face-attendance
+#
+# Nginx reverse proxy + HTTPS for the CodeGloFix Access Control System.
+#
+# TWO VIEWS, ONE PC:
+#   1. OUTSIDE DOOR DISPLAY (7") — public kiosk. Shows live gate feed + the
+#      member's own Granted/Denied result. NO admin controls, NO member list,
+#      NO payments, NO settings, NO relay buttons.
+#   2. INSIDE ADMIN PANEL — staff/owner. Member/payment/enrolment management,
+#      relay test, emergency lock, logs, settings. Requires admin login (cookie).
+#
+# Defence in depth:
+#   • App binds 127.0.0.1:5000 only (see start.sh) — never directly on the LAN.
+#   • App layer: every admin API uses require_admin; /admin, /enrol, /enrol_remote
+#     serve a login page (HTTP 401) unless a valid admin_session cookie is present.
+#   • Nginx layer (this file): the kiosk endpoints are restricted to the local
+#     gym network, and the admin pages can OPTIONALLY be restricted to a smaller
+#     "admin/inside" subnet on top of the cookie requirement.
+#
+# Setup steps:
+#   1. sudo cp gym-access.nginx /etc/nginx/sites-available/face-attendance
+#   2. Generate a self-signed certificate (valid 10 years):
+#        sudo mkdir -p /etc/nginx/ssl
+#        sudo openssl req -x509 -nodes -days 3650 -newkey rsa:2048 \
+#          -keyout /etc/nginx/ssl/face-attendance.key \
+#          -out    /etc/nginx/ssl/face-attendance.crt \
+#          -subj "/CN=localhost/O=CodeGloFix/C=LK"
+#   3. sudo ln -s /etc/nginx/sites-available/face-attendance \
+#                 /etc/nginx/sites-enabled/face-attendance
+#      sudo nginx -t && sudo systemctl reload nginx
+#   4. Ensure COOKIE_SECURE=true in /etc/gym-access.env (start.sh defaults it true).
+#
+#   Access:
+#     Outside 7" kiosk : https://localhost/         (Chromium kiosk on this PC)
+#     Inside admin      : https://localhost/admin    (this PC) OR
+#                         https://<device-ip>/admin  (inside LAN, login required)
+
+upstream gym_app {
+    server 127.0.0.1:5000;
+}
+
+server {
+    listen 80;
+    server_name _;
+    # Redirect all HTTP to HTTPS
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    server_name _;
+
+    ssl_certificate     /etc/nginx/ssl/face-attendance.crt;
+    ssl_certificate_key /etc/nginx/ssl/face-attendance.key;
+
+    # Modern TLS only
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers on;
+
+    # Security headers
+    add_header X-Frame-Options SAMEORIGIN;
+    add_header X-Content-Type-Options nosniff;
+    add_header X-XSS-Protection "1; mode=block";
+
+    client_max_body_size 10M;   # enrolment image uploads
+
+    # Shared proxy settings (MJPEG-friendly: no buffering, long timeouts).
+    proxy_http_version 1.1;
+    proxy_set_header   Host              $host;
+    proxy_set_header   X-Real-IP         $remote_addr;
+    proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+    proxy_set_header   X-Forwarded-Proto $scheme;
+    proxy_buffering    off;
+    proxy_cache        off;
+    proxy_read_timeout 3600s;
+    proxy_send_timeout 3600s;
+    proxy_pass_header  Content-Type;
+
+    # ── (1) PUBLIC KIOSK endpoints ────────────────────────────────────────────
+    # Used by the outside 7" display. These have NO server-side login (the kiosk
+    # is unattended) so they are restricted to the local gym LAN here. Their
+    # responses are already trimmed app-side to kiosk-only data:
+    #   /video_feed, /snapshot   → live door camera (the member's own face)
+    #   /api/gate_status         → status-bar instruction text
+    #   /api/last_detection      → current member name + Granted/Denied only
+    #   /api/health              → camera liveness only (no operational state)
+    # TIGHTEN the allow ranges to your real kiosk/LAN subnet (ideally a /32 each).
+    location ~ ^/(video_feed|snapshot|api/(last_detection|gate_status|health))(/|$) {
+        allow 127.0.0.1;
+        allow 192.168.0.0/16;   # local gym LAN — TIGHTEN to your subnet
+        allow 10.0.0.0/8;       # local gym LAN — TIGHTEN or remove
+        deny  all;
+        proxy_pass http://gym_app;
+    }
+
+    # ── (2) ADMIN pages ───────────────────────────────────────────────────────
+    # Protected by the admin_session cookie at the app layer. OPTIONAL extra
+    # network restriction below: uncomment/tighten the allow lines to limit the
+    # admin UI to the inside/admin machines only. Leave open (just `allow all;`)
+    # if the owner needs to reach /admin from any inside-LAN phone/tablet — the
+    # login cookie still protects it.
+    location ~ ^/(admin|enrol|enrol_remote)(/|$) {
+        allow 127.0.0.1;            # this PC (inside admin browser)
+        allow 192.168.0.0/16;       # inside LAN — TIGHTEN to admin subnet, e.g. 192.168.1.0/24
+        deny  all;                  # block everything else (e.g. the kiosk VLAN)
+        proxy_pass http://gym_app;
+    }
+
+    # ── (3) Everything else ───────────────────────────────────────────────────
+    # Kiosk shell ("/"), static assets, service worker, manifest, and the
+    # admin/auth APIs (each enforces require_admin or is login itself). Served to
+    # the LAN; sensitive APIs are protected by the cookie at the app layer.
+    location / {
+        proxy_pass http://gym_app;
+    }
+}

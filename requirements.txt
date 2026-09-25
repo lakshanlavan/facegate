@@ -1,0 +1,55 @@
+# ══════════════════════════════════════════════════════════════════
+#  CodeGloFix Access Control — Final Verified Requirements
+#  CodeGloFix
+#
+#  Supported: Ubuntu 22.04 / 24.04  —  Python 3.10 / 3.11 / 3.12 (exact pins below).
+#  Verified : Ubuntu 22.04, Python 3.10.12 (reference production system).
+#  Python 3.13 / 3.14 (Ubuntu 26.x): the installer uses requirements-py314.txt
+#  (same packages, relaxed native floors for cp314 wheels). Do NOT edit the pins
+#  below for newer Python — change requirements-py314.txt instead.
+#
+#  Install:
+#      Step 1 — System packages (run once):
+#          sudo apt install -y python3 python3-pip python3-venv git curl speech-dispatcher
+#
+#      Step 2 — Python packages:
+#          pip install --upgrade pip
+#          pip install -r requirements.txt
+# ══════════════════════════════════════════════════════════════════
+
+
+# ── Web Framework ──────────────────────────────────────────────────
+fastapi==0.135.3
+uvicorn==0.44.0
+python-multipart==0.0.24
+Jinja2==3.1.6
+itsdangerous==2.2.0
+
+
+# ── FastAPI / Uvicorn Dependencies ─────────────────────────────────
+starlette==1.0.0
+pydantic==2.12.5
+pydantic_core==2.41.5
+anyio==4.13.0
+h11==0.16.0
+annotated-types==0.7.0
+typing_extensions==4.15.0
+MarkupSafe==3.0.3
+
+
+# ── Computer Vision ────────────────────────────────────────────────
+opencv-python==4.11.0.86
+numpy==1.26.4
+pillow==12.1.1
+
+
+# ── Face Recognition ───────────────────────────────────────────────
+insightface==0.7.3
+onnxruntime==1.23.2
+scipy==1.15.3
+
+
+# ── Door Relay (serial) ────────────────────────────────────────────
+# REQUIRED: relay_controller.py talks to the door controller over serial.
+# Without this the relay can never connect and the door will not open.
+pyserial==3.5

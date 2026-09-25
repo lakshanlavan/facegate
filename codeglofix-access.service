@@ -1,0 +1,32 @@
+[Unit]
+# IN-PLACE / dev unit — runs the app from the project folder in the user's home.
+# Installed by install_production.sh as /etc/systemd/system/codeglofix-access@.service
+# and enabled as codeglofix-access@<user>.
+Description=CodeGloFix Access Control
+# The camera is NOT a hard dependency, so the service still starts on a PC with no
+# camera yet (the app picks the camera up when it appears).
+After=graphical.target network-online.target
+Wants=network-online.target
+# Restart rate-limit lives in [Unit] (systemd ignores these keys under [Service]).
+StartLimitIntervalSec=300
+StartLimitBurst=10
+
+[Service]
+Type=simple
+User=%i
+WorkingDirectory=/home/%i/Desktop/gym_face_access/gym_face_access
+# Prefer the new env file; the legacy one is read as an optional fallback so an
+# un-migrated dev box keeps working. Both are optional (start.sh still hard-fails
+# if ADMIN_PASSWORD / SESSION_SECRET are absent), so re-running never wedges here.
+EnvironmentFile=-/etc/codeglofix-access.env
+EnvironmentFile=-/etc/gym-access.env
+Environment=PYTHONUNBUFFERED=1
+Environment=DISPLAY=:0
+ExecStart=/home/%i/Desktop/gym_face_access/gym_face_access/start.sh
+Restart=always
+RestartSec=10
+StandardOutput=append:/home/%i/Desktop/gym_face_access/gym_face_access/codeglofix_backend.log
+StandardError=append:/home/%i/Desktop/gym_face_access/gym_face_access/codeglofix_backend.log
+
+[Install]
+WantedBy=graphical.target

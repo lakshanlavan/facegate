@@ -1,0 +1,52 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# codeglofix-live-display.service — systemd --user unit for the PyQt6 live-display
+# wrapper (outside 7" door display). This is the ONLY live view.
+#
+# This is a TEMPLATE. The installer renders __PROJECT_DIR__ and __VENV_DIR__ to
+# the real install/venv paths and copies it to
+# ~/.config/systemd/user/codeglofix-live-display.service.
+# It is a PER-USER (systemd --user) service — it runs inside the desktop user's
+# graphical session, NOT as root/system, so Wayland/DISPLAY/XAUTHORITY are correct
+# (WebEngine needs a real session). The installer enables it by default so the
+# door display auto-starts on graphical login (skip with --no-autostart).
+# ──────────────────────────────────────────────────────────────────────────────
+[Unit]
+Description=CodeGloFix PyQt Live Display (outside 7" door display)
+# Only meaningful inside a graphical session; order after it is ready.
+After=graphical-session.target
+PartOf=graphical-session.target
+# The launcher itself waits for the backend health URL, so we do not hard-depend
+# on the backend unit here (and a --user unit cannot Require a system unit).
+# Restart rate-limit MUST live in [Unit] — systemd ignores these keys under
+# [Service]. Ride out a slow graphical/backend startup without tripping it.
+StartLimitIntervalSec=120
+StartLimitBurst=10
+
+[Service]
+Type=simple
+# run_live_display.sh resolves the venv, forces the Wayland Qt platform for this
+# process only, waits for backend health, then execs kiosk/live_display.py. All
+# logging goes through the launcher to /var/log/codeglofix/live_display.log (or
+# the project kiosk/ fallback) — so no systemd log redirection is needed here.
+ExecStart=__PROJECT_DIR__/kiosk/run_live_display.sh
+
+# Robust, explicit defaults rendered by the installer. The URLs point DIRECTLY at
+# the backend port (plain HTTP, no nginx, no self-signed cert) so the display
+# comes up even when nginx is absent/misconfigured. LIVE_DISPLAY_VENV is the
+# installer-rendered app venv, so run_live_display.sh uses the exact venv the
+# PyQt deps were installed into (no auto-detection guesswork).
+# To route through nginx instead, change the two URLs to https://localhost/ and
+# https://localhost/api/health (the localhost self-signed cert is accepted).
+Environment=LIVE_DISPLAY_URL=http://127.0.0.1:5000/
+Environment=LIVE_DISPLAY_HEALTH_URL=http://127.0.0.1:5000/api/health
+Environment=LIVE_DISPLAY_VENV=__VENV_DIR__
+
+# Power-cut recovery: keep the display up. run_live_display.sh runs the wrapper
+# once and exits with its code; live_display.py exits non-zero (2) after repeated
+# reload failures. systemd restarts it either way, with a short delay so a
+# still-booting backend does not cause a tight crash-loop.
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=graphical-session.target

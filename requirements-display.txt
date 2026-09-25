@@ -1,0 +1,19 @@
+# ══════════════════════════════════════════════════════════════════
+#  CodeGloFix / DigitFace — OPTIONAL display-wrapper requirements
+#
+#  These packages are ONLY needed for the PyQt6 live-display wrapper
+#  (kiosk/live_display.py + kiosk/run_live_display.sh). They are NOT
+#  required by the backend, face recognition, or the Chromium kiosk.
+#
+#  The main requirements.txt is intentionally NOT edited: the backend
+#  service and the existing installer must keep working with zero new
+#  dependencies. Install these ONLY when you want the PyQt front-end,
+#  into the SAME virtual environment the app already uses:
+#
+#      <venv>/bin/pip install -r requirements-display.txt
+#
+#  Verified target: Python 3.10.x on Ubuntu (matches the project venv).
+# ══════════════════════════════════════════════════════════════════
+
+PyQt6>=6.5
+PyQt6-WebEngine>=6.5

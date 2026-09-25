@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#DD2C50">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CodeGloFix">
+<link rel="apple-touch-icon" href="/static/codeglofix.png">
+<link rel="manifest" href="/static/manifest.json">
+<title>CodeGloFix — Remote Enrolment</title>
+<link rel="icon" type="image/png" href="/static/codeglofix.png">
+<link rel="stylesheet" href="/static/css/theme.css">
+<style>
+body { min-height: 100dvh; display: flex; flex-direction: column; }
+
+/* ── Brand visibility ────────────────────────────────────── */
+.navbar .brand-logo { height: 54px; max-width: 190px; }
+
+
+.enrol-wrap {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 32px 16px 48px;
+}
+.enrol-box {
+  width: 100%;
+  max-width: 460px;
+}
+.enrol-header { text-align: center; margin-bottom: 28px; }
+.enrol-logo  { height: 92px; width: auto; max-width: 280px; object-fit: contain; margin: 0 auto 22px; display: block; }
+.enrol-title { font-size: 22px; font-weight: 700; color: var(--t1); letter-spacing: -0.3px; margin-bottom: 4px; }
+.enrol-sub   { font-size: 13px; color: var(--t3); }
+
+/* Steps */
+.step { display: none; }
+.step.active { display: block; }
+
+/* Photo slots */
+.photo-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 16px; }
+.photo-slot {
+  aspect-ratio: 3/4;
+  background: var(--bg-input);
+  border: 1px dashed var(--border-2);
+  border-radius: var(--rs);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+  overflow: hidden;
+  position: relative;
+}
+.photo-slot:hover { border-color: var(--accent); }
+.photo-slot.uploaded { border-color: var(--green); border-style: solid; }
+.photo-slot img { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; }
+.slot-overlay { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.slot-num  { font-size: 11px; font-weight: 700; color: var(--t3); }
+.slot-hint { font-size: 9px; color: var(--t3); text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* Progress bar */
+.prog-wrap { margin-bottom: 16px; }
+.prog-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--t3); margin-bottom: 5px; }
+.prog-bar { height: 3px; background: var(--bg-hover); border-radius: 3px; overflow: hidden; }
+.prog-fill { height: 100%; background: var(--green); border-radius: 3px; transition: width 0.4s; width: 0%; }
+
+/* Success */
+.success-wrap { text-align: center; padding: 20px 0; }
+.success-icon { font-size: 56px; margin-bottom: 16px; }
+.success-title { font-size: 24px; font-weight: 700; color: var(--t1); margin-bottom: 6px; }
+.success-name  { font-size: 18px; font-weight: 700; color: var(--accent); margin-bottom: 10px; }
+.success-note  { font-size: 13px; color: var(--t3); margin-bottom: 24px; line-height: 1.6; }
+
+.err-box { font-size: 12px; color: var(--red); background: var(--red-dim); border: 1px solid rgba(239,68,68,0.2); border-radius: var(--rs); padding: 8px 12px; margin-bottom: 14px; display: none; }
+.warn-box { font-size: 12px; color: var(--amber); background: var(--amber-dim); border: 1px solid rgba(245,158,11,0.2); border-radius: var(--rs); padding: 10px 12px; margin-bottom: 16px; line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="brand" href="/">
+    <img class="brand-logo" src="/static/codeglofix.png" alt="CodeGloFix" onerror="this.style.display='none'">
+    <div><div class="brand-name">CodeGloFix</div><div class="brand-sub">Remote Enrolment</div></div>
+  </a>
+  <div class="nav-sep"></div>
+  <a href="/enrol" class="nav-tab">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="16" y1="11" x2="22" y2="11"/></svg>Enrol
+  </a>
+  <a href="/enrol_remote" class="nav-tab active">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="2" width="14" height="20" rx="2"/><circle cx="12" cy="17" r="1"/></svg>Remote Enrol
+  </a>
+  <a href="/admin" class="nav-tab">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Admin
+  </a>
+  <div class="nav-right">
+    <div class="clock" id="clock">--:--:--</div>
+  </div>
+</nav>
+
+<div class="enrol-wrap">
+  <div class="enrol-box">
+
+    <div class="enrol-header">
+      <img class="enrol-logo" src="/static/codeglofix.png" alt="CodeGloFix" onerror="this.style.display='none'">
+      <div class="enrol-title">Remote Member Enrolment</div>
+      <div class="enrol-sub">Upload 3 clear face photos for registration</div>
+    </div>
+
+    <!-- Step 1: Login -->
+    <div class="step active" id="step-login">
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);padding:28px">
+        <div class="form-group">
+          <label class="form-label">Member Name</label>
+          <input class="form-input" type="text" id="reg-name" placeholder="Full name of new member" autocomplete="off">
+          <div id="name-err" style="font-size:11px;color:var(--red);margin-top:4px;min-height:14px"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Phone Number <span style="color:var(--t3);font-weight:500">(optional)</span></label>
+          <input class="form-input" type="tel" id="reg-phone" placeholder="07XXXXXXXX" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Admin Password</label>
+          <input class="form-input" type="password" id="reg-password" placeholder="Admin password">
+          <div id="pw-err" style="font-size:11px;color:var(--red);margin-top:4px;min-height:14px"></div>
+        </div>
+        <button class="btn btn-primary" style="width:100%;justify-content:center;padding:11px" onclick="goToUpload()">
+          Continue to Upload
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 2: Upload Photos -->
+    <div class="step" id="step-upload">
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);padding:24px">
+        <div style="margin-bottom:18px">
+          <div style="font-size:13px;font-weight:600;color:var(--t1);margin-bottom:4px">Uploading for: <span id="upload-name" style="color:var(--accent)">—</span></div>
+          <div style="font-size:11px;color:var(--t3)">Upload 3 different poses — front, side profile, angled view</div>
+        </div>
+
+        <div class="prog-wrap">
+          <div class="prog-labels"><span>Photos uploaded</span><span id="upload-count">0 / 3</span></div>
+          <div class="prog-bar"><div class="prog-fill" id="upload-bar"></div></div>
+        </div>
+
+        <div class="photo-grid">
+          <div class="photo-slot" id="photo-slot-1" onclick="document.getElementById('photo_input_1').click()">
+            <input type="file" id="photo_input_1" accept="image/*" style="display:none" onchange="handlePhoto(1,this)">
+            <div class="slot-overlay">
+              <div style="font-size:28px">👤</div>
+              <div class="slot-num">Photo 1</div>
+              <div class="slot-hint">Front</div>
+            </div>
+          </div>
+          <div class="photo-slot" id="photo-slot-2" onclick="document.getElementById('photo_input_2').click()">
+            <input type="file" id="photo_input_2" accept="image/*" style="display:none" onchange="handlePhoto(2,this)">
+            <div class="slot-overlay">
+              <div style="font-size:28px">↔</div>
+              <div class="slot-num">Photo 2</div>
+              <div class="slot-hint">Side</div>
+            </div>
+          </div>
+          <div class="photo-slot" id="photo-slot-3" onclick="document.getElementById('photo_input_3').click()">
+            <input type="file" id="photo_input_3" accept="image/*" style="display:none" onchange="handlePhoto(3,this)">
+            <div class="slot-overlay">
+              <div style="font-size:28px">↕</div>
+              <div class="slot-num">Photo 3</div>
+              <div class="slot-hint">Angle</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="err-box" id="upload-err"></div>
+
+        <button class="btn btn-primary" id="submit-btn" onclick="submitEnrol()" style="width:100%;justify-content:center;padding:11px">
+          Register Member
+        </button>
+        <button class="btn btn-outline" onclick="goToStep('step-login')" style="width:100%;justify-content:center;margin-top:8px">
+          Back
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 3: Success -->
+    <div class="step" id="step-success">
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);padding:32px">
+        <div class="success-wrap">
+          <div class="success-icon">✅</div>
+          <div class="success-title">Enrolment Complete</div>
+          <div class="success-name" id="success-name">—</div>
+          <div class="success-note">3 face embeddings saved. Member record created.</div>
+          <div class="warn-box" style="display:block;text-align:left">
+            ⚠ <strong style="color:var(--t1)">Remember:</strong> Go to Admin → Payments to add a membership payment for this member.<br>
+            Without a valid payment, the door will not open.
+          </div>
+          <button class="btn btn-outline" onclick="resetForm()" style="width:100%;justify-content:center;margin-bottom:10px">
+            Enrol Another Member
+          </button>
+          <a href="/admin" class="btn btn-primary" style="width:100%;justify-content:center;text-decoration:none">
+            Go to Admin Panel
+          </a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="bottom-bar">
+  <span>CodeGloFix &copy; <span id="foot-year"></span> CodeGloFix</span>
+</div>
+
+<div id="toast"></div>
+<script src="/static/js/common.js"></script>
+<script>
+document.getElementById('foot-year').textContent = new Date().getFullYear();
+dg_startClock('clock', null);
+
+// ── Step navigation ───────────────────────────────────────────────────────────
+function goToStep(id) {
+  ['step-login','step-upload','step-success'].forEach(s => {
+    const el = document.getElementById(s);
+    if (el) el.classList.toggle('active', s === id);
+  });
+}
+
+// ── Go to upload ──────────────────────────────────────────────────────────────
+function goToUpload() {
+  const name  = (document.getElementById('reg-name')?.value || '').trim();
+  const phone = (document.getElementById('reg-phone')?.value || '').trim();
+  const pw    = (document.getElementById('reg-password')?.value || '');
+  document.getElementById('name-err').textContent = '';
+  document.getElementById('pw-err').textContent   = '';
+  if (!name) { document.getElementById('name-err').textContent = 'Name is required'; return; }
+  if (!pw)   { document.getElementById('pw-err').textContent   = 'Admin password is required'; return; }
+  window._enrollName  = name;
+  window._enrollPhone = phone;
+  window._enrollPw    = pw;
+  document.getElementById('upload-name').textContent = phone ? `${name} (${phone})` : name;
+  goToStep('step-upload');
+}
+
+// ── Handle photo upload ───────────────────────────────────────────────────────
+let _uploadedFiles = {};
+
+function handlePhoto(slot, input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const errEl = document.getElementById('upload-err');
+  if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
+
+  if (!file.type || !file.type.startsWith('image/')) {
+    if (errEl) { errEl.textContent = 'Please upload an image file only.'; errEl.style.display = 'block'; }
+    input.value = '';
+    return;
+  }
+
+  const maxBytes = 8 * 1024 * 1024;
+  if (file.size > maxBytes) {
+    if (errEl) { errEl.textContent = 'Image is too large. Please upload a photo below 8 MB.'; errEl.style.display = 'block'; }
+    input.value = '';
+    return;
+  }
+
+  const slotEl = document.getElementById('photo-slot-' + slot);
+  const reader = new FileReader();
+  reader.onload = ev => {
+    let img = slotEl.querySelector('img');
+    if (!img) { img = document.createElement('img'); slotEl.appendChild(img); }
+    img.src = ev.target.result;
+    slotEl.classList.add('uploaded');
+    _uploadedFiles[slot] = file;
+    updateUploadProgress();
+  };
+  reader.readAsDataURL(file);
+}
+
+function updateUploadProgress() {
+  const count = Object.keys(_uploadedFiles).length;
+  const bar   = document.getElementById('upload-bar');
+  const label = document.getElementById('upload-count');
+  if (bar)   bar.style.width = (count / 3 * 100) + '%';
+  if (label) label.textContent = count + ' / 3';
+}
+
+
+async function secureRemoteLogout() {
+  try {
+    await fetch('/api/auth/logout', { method: 'POST' });
+  } catch (e) {
+    // Ignore logout network errors; we still clear local password references.
+  }
+  window._enrollPw = '';
+  const pwInput = document.getElementById('reg-password');
+  if (pwInput) pwInput.value = '';
+}
+
+// ── Submit enrolment ──────────────────────────────────────────────────────────
+async function submitEnrol() {
+  const errEl = document.getElementById('upload-err');
+  const btn   = document.getElementById('submit-btn');
+  errEl.style.display = 'none';
+  errEl.textContent   = '';
+
+  const name = window._enrollName;
+  const pw   = window._enrollPw;
+
+  if (Object.keys(_uploadedFiles).length < 3) {
+    errEl.textContent = 'Please upload all 3 photos before registering.';
+    errEl.style.display = 'block'; return;
+  }
+
+  btn.textContent = 'Registering…'; btn.disabled = true;
+
+  // Login
+  try {
+    const fd = new FormData(); fd.append('password', pw);
+    const lr = await fetch('/api/auth/login', { method:'POST', body: fd });
+    if (!lr.ok) {
+      errEl.textContent = 'Incorrect admin password. Please go back and try again.';
+      errEl.style.display = 'block';
+      btn.textContent = 'Register Member'; btn.disabled = false; return;
+    }
+  } catch(e) {
+    errEl.textContent = 'Server error during login.';
+    errEl.style.display = 'block';
+    btn.textContent = 'Register Member'; btn.disabled = false; return;
+  }
+
+  // Upload 3 photos
+  for (const [slot, file] of Object.entries(_uploadedFiles)) {
+    const fd = new FormData();
+    fd.append('name', name); fd.append('slot', slot); fd.append('photo', file);
+    try {
+      const res = await fetch('/api/enrol/upload', { method:'POST', body: fd });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        errEl.textContent = d.detail || ('Upload failed for photo ' + slot);
+        errEl.style.display = 'block';
+        btn.textContent = 'Register Member'; btn.disabled = false; return;
+      }
+    } catch(e) {
+      errEl.textContent = 'Network error uploading photo ' + slot;
+      errEl.style.display = 'block';
+      btn.textContent = 'Register Member'; btn.disabled = false; return;
+    }
+  }
+
+  // Confirm
+  const fd = new FormData();
+  fd.append('name', name);
+  fd.append('phone', window._enrollPhone || '');
+  try {
+    const res = await fetch('/api/enrol/confirm', { method:'POST', body: fd });
+    if (res.ok) {
+      await secureRemoteLogout();
+      document.getElementById('success-name').textContent = name;
+      goToStep('step-success');
+    } else {
+      const d = await res.json().catch(() => ({}));
+      errEl.textContent = d.detail || 'Confirmation failed.';
+      errEl.style.display = 'block';
+      btn.textContent = 'Register Member'; btn.disabled = false;
+    }
+  } catch(e) {
+    errEl.textContent = 'Network error during confirmation.';
+    errEl.style.display = 'block';
+    btn.textContent = 'Register Member'; btn.disabled = false;
+  }
+}
+
+function resetForm() {
+  _uploadedFiles = {};
+  [1,2,3].forEach(s => {
+    const sl = document.getElementById('photo-slot-' + s);
+    if (sl) { sl.classList.remove('uploaded'); const img = sl.querySelector('img'); if (img) img.remove(); }
+    const inp = document.getElementById('photo_input_' + s);
+    if (inp) inp.value = '';
+  });
+  updateUploadProgress();
+  document.getElementById('reg-name').value = '';
+  const phoneInput = document.getElementById('reg-phone');
+  if (phoneInput) phoneInput.value = '';
+  document.getElementById('reg-password').value = '';
+  window._enrollName = '';
+  window._enrollPhone = '';
+  window._enrollPw = '';
+  const errEl = document.getElementById('upload-err');
+  if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
+  goToStep('step-login');
+}
+
+document.getElementById('reg-password').addEventListener('keydown', e => { if(e.key==='Enter') goToUpload(); });
+</script>
+</body>
+</html>

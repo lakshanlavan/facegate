@@ -1,0 +1,15 @@
+[Unit]
+Description=CodeGloFix Access Health Check Timer
+
+[Timer]
+# Bootstrap trigger: fire 60s after boot even if the health service never ran.
+# Without OnBootSec, an OnUnitActiveSec-only timer against a never-run oneshot
+# resolves to next_elapse=infinity and never fires.
+OnBootSec=60
+# Then keep firing every 60s after each health-check run.
+OnUnitActiveSec=60
+Unit=codeglofix-health.service
+Persistent=false
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#DD2C50">
+<meta name="robots" content="noindex, nofollow">
+<title>CodeGloFix — Admin Login</title>
+<link rel="icon" type="image/png" href="/static/codeglofix.png">
+<link rel="stylesheet" href="/static/css/theme.css">
+<style>
+/* ══════════════════════════════════════════════════════════════════
+   login.html — Standalone admin login gate.
+
+   Served (HTTP 401) in place of /admin, /enrol and /enrol_remote when
+   the admin_session cookie is missing or invalid. No admin UI/markup is
+   shipped until the password is verified, so the public outside-door
+   display can never see admin controls or member data.
+══════════════════════════════════════════════════════════════════ */
+body {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.login-box {
+  width: 360px;
+  max-width: 94vw;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 34px 28px;
+  text-align: center;
+}
+.login-brand-logo { height: 56px; max-width: 200px; object-fit: contain; margin-bottom: 14px; }
+.login-title { font-size: 20px; font-weight: 700; color: var(--t1); }
+.login-sub   { font-size: 12px; color: var(--t3); margin-top: 4px; margin-bottom: 22px; }
+.form-label  { display: block; text-align: left; font-size: 12px; color: var(--t2); margin-bottom: 6px; }
+.form-input  {
+  width: 100%;
+  padding: 11px 12px;
+  background: var(--bg-input, var(--bg));
+  border: 1px solid var(--border);
+  border-radius: var(--rs, 8px);
+  color: var(--t1);
+  font-size: 15px;
+  box-sizing: border-box;
+}
+.form-input:focus { outline: none; border-color: var(--accent); }
+.btn-login {
+  width: 100%;
+  margin-top: 16px;
+  padding: 12px;
+  background: var(--accent);
+  border: none;
+  border-radius: var(--rs, 8px);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-login:disabled { opacity: 0.6; cursor: default; }
+.login-err {
+  min-height: 18px;
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--red);
+}
+</style>
+</head>
+<body>
+<div class="login-box">
+  <img class="login-brand-logo" src="/static/codeglofix.png" alt="CodeGloFix" onerror="this.style.display='none'">
+  <div class="login-title">Admin Access</div>
+  <div class="login-sub">CodeGloFix Access Control System</div>
+
+  <form id="login-form" autocomplete="off">
+    <label class="form-label" for="login-pw">Admin Password</label>
+    <input class="form-input" type="password" id="login-pw" placeholder="Enter admin password" autofocus>
+    <button class="btn-login" type="submit" id="login-btn">Sign in</button>
+    <div class="login-err" id="login-err"></div>
+  </form>
+</div>
+
+<script>
+// Where to send the admin once authenticated (set by the server template).
+const NEXT_URL = {{ next | tojson }};
+
+const form  = document.getElementById('login-form');
+const pwEl   = document.getElementById('login-pw');
+const btn    = document.getElementById('login-btn');
+const errEl  = document.getElementById('login-err');
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  errEl.textContent = '';
+  const pw = pwEl.value;
+  if (!pw) { errEl.textContent = 'Password required'; return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Signing in…';
+  try {
+    const body = new URLSearchParams({ password: pw });
+    const r = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body,
+    });
+    if (r.ok) {
+      // Cookie is set; reload the originally requested admin page.
+      window.location.href = NEXT_URL || '/admin';
+      return;
+    }
+    errEl.textContent = r.status === 401 ? 'Incorrect password' : 'Login failed';
+  } catch (err) {
+    errEl.textContent = 'Network error';
+  }
+  btn.disabled = false;
+  btn.textContent = 'Sign in';
+  pwEl.value = '';
+  pwEl.focus();
+});
+</script>
+</body>
+</html>

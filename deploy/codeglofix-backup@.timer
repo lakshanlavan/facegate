@@ -1,0 +1,11 @@
+[Unit]
+Description=CodeGloFix daily backup timer
+
+[Timer]
+OnCalendar=*-*-* 03:30:00
+Persistent=true
+RandomizedDelaySec=300
+Unit=codeglofix-backup@%i.service
+
+[Install]
+WantedBy=timers.target

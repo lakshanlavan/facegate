@@ -1,0 +1,30 @@
+# /etc/logrotate.d/gym-access
+# Keeps the CodeGloFix backend + live-display logs from filling the disk on a PC
+# that runs 24/7. copytruncate is used because systemd (StandardOutput=append:)
+# and the live-display wrapper hold the log file open — rename-based rotation
+# would leave them writing to the old inode.
+#
+# Installed by install_production.sh (paths are substituted for the real user).
+
+__PROJECT_DIR__/codeglofix_backend.log {
+    daily
+    rotate 14
+    missingok
+    notifempty
+    compress
+    delaycompress
+    copytruncate
+    su __USER__ __USER__
+    create 0640 __USER__ __USER__
+}
+
+/var/log/codeglofix/live_display.log {
+    weekly
+    rotate 6
+    missingok
+    notifempty
+    compress
+    copytruncate
+    su __USER__ __USER__
+    create 0640 __USER__ __USER__
+}

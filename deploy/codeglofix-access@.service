@@ -1,0 +1,38 @@
+[Unit]
+# PRODUCTION unit — runs the app from /opt/codeglofix/app (read-only code) with
+# data in /var/lib/codeglofix. Installed by deploy/install_customer_pc.sh as
+# /etc/systemd/system/codeglofix-access@.service and enabled as
+# codeglofix-access@<user>.
+Description=CodeGloFix Access Control (production)
+# network-online is a hard ordering need; the camera is NOT. We deliberately do
+# not Want/After dev-video0.device so the service still starts on a PC that has
+# no camera yet (install/bench testing). The app tolerates a missing camera at
+# runtime and picks it up when it appears.
+After=graphical.target network-online.target
+Wants=network-online.target
+# Restart rate-limit lives in [Unit] (systemd ignores these keys under [Service]).
+StartLimitIntervalSec=120
+StartLimitBurst=10
+
+[Service]
+Type=simple
+User=%i
+WorkingDirectory=/opt/codeglofix/app
+EnvironmentFile=/etc/codeglofix-access.env
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONPATH=/opt/codeglofix/app
+Environment=DISPLAY=:0
+# Disable USB autosuspend for already-connected devices at service start
+# (belt-and-braces with the udev rule that covers hot-plug/boot). Best-effort:
+# runs as root via '+', each write guarded with '|| true', so a missing sysfs
+# path can never fail the service. Does not touch the relay/serial device logic.
+ExecStartPre=+/bin/sh -c 'for f in /sys/bus/usb/devices/*/power/control; do echo on > "$f" 2>/dev/null || true; done; for f in /sys/bus/usb/devices/*/power/autosuspend_delay_ms; do echo -1 > "$f" 2>/dev/null || true; done'
+ExecStart=/opt/codeglofix/app/start.sh
+Restart=always
+RestartSec=3
+
+StandardOutput=append:/var/log/codeglofix/backend.log
+StandardError=append:/var/log/codeglofix/backend.log
+
+[Install]
+WantedBy=graphical.target

@@ -1,0 +1,15 @@
+[Unit]
+Description=CodeGloFix database + metadata backup
+After=codeglofix-access@%i.service
+Wants=codeglofix-access@%i.service
+
+[Service]
+Type=oneshot
+User=%i
+WorkingDirectory=/opt/codeglofix/app
+EnvironmentFile=/etc/codeglofix-access.env
+Environment=HOME=/home/%i
+# Backups go to /var/backups/codeglofix in production (set in /etc/codeglofix-access.env).
+ExecStart=/opt/codeglofix/app/backup_db.sh
+Nice=10
+IOSchedulingClass=idle

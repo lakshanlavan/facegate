@@ -1,0 +1,11 @@
+[Unit]
+Description=CodeGloFix Access Health Check
+After=network-online.target
+
+[Service]
+Type=oneshot
+# Delegated to a standalone script to avoid systemd ExecStart quote/escape
+# mangling of the match pattern. The script treats the app as healthy only when
+# /api/health returns {"ok":true}, retries to ride out startup/camera warm-up,
+# and only then clears failed-state + restarts the CodeGloFix access service.
+ExecStart=/opt/codeglofix/app/deploy/codeglofix-health-check.sh

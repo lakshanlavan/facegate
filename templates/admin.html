@@ -1,0 +1,1620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#DD2C50">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CodeGloFix">
+<title>CodeGloFix — Admin</title>
+<link rel="icon" type="image/png" href="/static/codeglofix.png">
+<link rel="apple-touch-icon" href="/static/codeglofix.png">
+<link rel="manifest" href="/static/manifest.json">
+<link rel="stylesheet" href="/static/css/theme.css">
+<style>
+/* ── Admin layout ────────────────────────────────────────── */
+body { min-height: 100vh; display: flex; flex-direction: column; }
+#main-ui { display: none; flex: 1; flex-direction: column; }
+.page { display: flex; flex: 1; min-height: 0; }
+
+/* ── Mobile hamburger button ─────────────────────────────── */
+.hamburger {
+  display: none;
+  align-items: center; justify-content: center;
+  width: 36px; height: 36px;
+  border: 1px solid var(--border-2);
+  border-radius: var(--rs);
+  background: transparent;
+  color: var(--t2);
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0;
+  transition: background 0.15s, color 0.15s;
+}
+.hamburger:hover { background: var(--bg-hover); color: var(--t1); }
+.hamburger svg   { width: 18px; height: 18px; pointer-events: none; }
+
+/* ── Sidebar backdrop (mobile) ───────────────────────────── */
+.sidebar-backdrop {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 45;
+}
+.sidebar-backdrop.visible { display: block; }
+
+/* Sidebar */
+.sidebar {
+  width: 196px;
+  flex-shrink: 0;
+  background: var(--bg-card);
+  border-right: 1px solid var(--border);
+  padding: 16px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.sidebar-section {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--t3);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 10px 8px 5px;
+  margin-top: 4px;
+}
+.side-tab {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border-radius: var(--rs);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--t3);
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+  transition: color 0.15s, background 0.15s;
+}
+.side-tab:hover { background: var(--bg-hover); color: var(--t1); }
+.side-tab.active { background: var(--accent-dim); color: var(--accent); border-left: 2px solid var(--accent); padding-left: 8px; }
+.side-tab svg { width: 14px; height: 14px; flex-shrink: 0; }
+.side-sep { height: 1px; background: var(--border); margin: 6px 0; }
+
+/* Content */
+.content { flex: 1; padding: 22px 26px; overflow-y: auto; min-height: 0; }
+.content::-webkit-scrollbar { width: 4px; }
+.content::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 4px; }
+
+/* Section */
+.section { display: none; }
+.section.active { display: block; }
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+.section-title { font-size: 20px; font-weight: 700; color: var(--t1); letter-spacing: -0.3px; }
+.section-sub { font-size: 11px; color: var(--t3); margin-top: 2px; }
+
+/* Door */
+.door-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.door-dot.open   { background: var(--green); box-shadow: 0 0 8px rgba(34,197,94,0.5); animation: dg-pulse 1.2s ease-in-out infinite; }
+.door-dot.locked { background: var(--red); }
+
+.emergency-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 18px;
+  margin-top: 14px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.emergency-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.emergency-title  { font-size: 14px; font-weight: 700; color: var(--t1); }
+
+/* Panels grid for member management */
+.mgmt-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-top: 18px; }
+@media (max-width: 1100px) { .mgmt-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 700px)  { .mgmt-grid { grid-template-columns: 1fr; } }
+
+/* Door grid */
+.door-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 0; }
+.door-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r); padding: 18px; }
+.door-card-title { font-size: 10px; font-weight: 700; color: var(--t3); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px; }
+
+/* ── Production Door Control UI ───────────────────────────── */
+.door-pro-grid {
+  display: grid;
+  grid-template-columns: minmax(340px, 1.15fr) minmax(300px, 0.85fr);
+  gap: 16px;
+  align-items: stretch;
+}
+
+.door-pro-card,
+.door-action-block,
+.emergency-pro-card {
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.012)),
+    var(--bg-card);
+  box-shadow: 0 14px 40px rgba(0,0,0,0.18);
+}
+
+.door-pro-card {
+  position: relative;
+  padding: 24px;
+  overflow: hidden;
+}
+
+.door-pro-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at top right, rgba(221,44,80,0.10), transparent 34%);
+}
+
+.door-pro-card.open {
+  border-color: rgba(34,197,94,0.42);
+}
+
+.door-pro-card.open::after {
+  background: radial-gradient(circle at top right, rgba(34,197,94,0.16), transparent 36%);
+}
+
+.door-pro-card.emergency {
+  border-color: rgba(239,68,68,0.52);
+}
+
+.door-pro-card.emergency::after {
+  background: radial-gradient(circle at top right, rgba(239,68,68,0.20), transparent 38%);
+}
+
+.door-pro-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  position: relative;
+  z-index: 1;
+}
+
+.door-pro-kicker {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  color: var(--t3);
+  margin-bottom: 6px;
+}
+
+.door-pro-title {
+  font-size: 34px;
+  font-weight: 850;
+  color: var(--t1);
+  line-height: 1;
+  letter-spacing: -0.8px;
+}
+
+.door-pro-sub {
+  font-size: 12px;
+  color: var(--t3);
+  margin-top: 10px;
+  max-width: 560px;
+  line-height: 1.6;
+}
+
+.door-state-ring {
+  width: 92px;
+  height: 92px;
+  border-radius: 26px;
+  display: grid;
+  place-items: center;
+  background: rgba(85,96,121,0.10);
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+.door-state-ring.open {
+  background: rgba(34,197,94,0.12);
+  border-color: rgba(34,197,94,0.30);
+}
+
+.door-state-ring.locked {
+  background: rgba(85,96,121,0.12);
+}
+
+.door-state-ring.emergency {
+  background: rgba(239,68,68,0.13);
+  border-color: rgba(239,68,68,0.38);
+}
+
+.door-state-ring .door-dot {
+  width: 30px;
+  height: 30px;
+  box-shadow: 0 0 18px rgba(239,68,68,0.35);
+}
+
+.door-state-ring.open .door-dot {
+  box-shadow: 0 0 22px rgba(34,197,94,0.60);
+}
+
+.door-pro-status-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 22px;
+  position: relative;
+  z-index: 1;
+}
+
+.door-pro-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: rgba(85,96,121,0.10);
+  border: 1px solid var(--border);
+  color: var(--t2);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.door-pro-pill.good {
+  color: var(--green);
+  border-color: rgba(34,197,94,0.26);
+  background: rgba(34,197,94,0.09);
+}
+
+.door-pro-pill.warn {
+  color: var(--amber);
+  border-color: rgba(245,158,11,0.28);
+  background: rgba(245,158,11,0.09);
+}
+
+.door-pro-pill.danger {
+  color: var(--red);
+  border-color: rgba(239,68,68,0.30);
+  background: rgba(239,68,68,0.10);
+}
+
+.door-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  gap: 10px;
+  margin-top: 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.door-meta {
+  padding: 13px;
+  border-radius: 13px;
+  background: rgba(12,15,30,0.34);
+  border: 1px solid rgba(85,96,121,0.24);
+}
+
+.door-meta-label {
+  font-size: 9px;
+  color: var(--t3);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1.4px;
+  margin-bottom: 6px;
+}
+
+.door-meta-value {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--t1);
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+/* ── Manual access card (right column) ─────────────────────────── */
+.door-manual-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 36px 28px 32px;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background:
+    radial-gradient(circle at bottom left, rgba(34,197,94,0.07), transparent 55%),
+    linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.012)),
+    var(--bg-card);
+  box-shadow: 0 14px 40px rgba(0,0,0,0.18);
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.25s;
+}
+.door-manual-card:hover {
+  border-color: rgba(34,197,94,0.28);
+}
+
+.door-manual-icon {
+  width: 68px;
+  height: 68px;
+  border-radius: 22px;
+  background: rgba(34,197,94,0.10);
+  border: 1px solid rgba(34,197,94,0.24);
+  display: grid;
+  place-items: center;
+  margin-bottom: 20px;
+  color: var(--green);
+  flex-shrink: 0;
+  box-shadow: 0 0 24px rgba(34,197,94,0.08);
+}
+.door-manual-icon svg { width: 30px; height: 30px; }
+
+.door-manual-kicker {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1.8px;
+  color: var(--t3);
+  margin-bottom: 8px;
+}
+
+.door-manual-heading {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--t1);
+  letter-spacing: -0.3px;
+  margin-bottom: 8px;
+}
+
+.door-manual-sub {
+  font-size: 12px;
+  color: var(--t3);
+  line-height: 1.65;
+  margin-bottom: 28px;
+  max-width: 230px;
+}
+
+.door-manual-btn {
+  width: 100%;
+  max-width: 210px;
+  padding: 13px 20px;
+  font-size: 14px;
+  font-weight: 700;
+  justify-content: center;
+  gap: 9px;
+  border-radius: 12px;
+  min-height: 46px;
+}
+
+.door-manual-note {
+  font-size: 11px;
+  color: var(--t3);
+  line-height: 1.6;
+  margin-top: 18px;
+  max-width: 230px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(85,96,121,0.20);
+  width: 100%;
+}
+
+/* Emergency card action buttons */
+.door-action-buttons {
+  display: flex;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+.door-action-buttons .btn { min-height: 38px; }
+
+.emergency-pro-card {
+  margin-top: 16px;
+  padding: 20px;
+  border-color: rgba(239,68,68,0.24);
+  background:
+    radial-gradient(circle at top right, rgba(239,68,68,0.12), transparent 34%),
+    var(--bg-card);
+}
+
+.emergency-pro-card.active {
+  border-color: rgba(239,68,68,0.56);
+  background:
+    radial-gradient(circle at top right, rgba(239,68,68,0.22), transparent 38%),
+    rgba(239,68,68,0.045);
+}
+
+.emergency-pro-head {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.emergency-pro-icon {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 13px;
+  background: rgba(239,68,68,0.10);
+  border: 1px solid rgba(239,68,68,0.25);
+  font-size: 19px;
+  flex-shrink: 0;
+}
+
+.emergency-pro-title {
+  font-size: 15px;
+  font-weight: 850;
+  color: var(--t1);
+}
+
+.emergency-pro-sub {
+  font-size: 11px;
+  color: var(--t3);
+  margin-top: 2px;
+}
+
+.emergency-pro-desc {
+  font-size: 12px;
+  color: var(--t2);
+  line-height: 1.65;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(12,15,30,0.30);
+  border-left: 3px solid rgba(239,68,68,0.40);
+  margin: 12px 0 14px;
+}
+
+@media (max-width: 980px) {
+  .door-pro-grid { grid-template-columns: 1fr; }
+  .door-pro-title { font-size: 28px; }
+  .door-state-ring { width: 78px; height: 78px; }
+}
+
+@media (max-width: 560px) {
+  .door-meta-grid { grid-template-columns: 1fr; }
+  .door-pro-top { align-items: flex-start; }
+  .door-action-buttons .btn { width: 100%; justify-content: center; }
+}
+
+
+/* === ADMIN BRAND FIX START === */
+/* Admin page logo sizing — matched with Enrol/Live pages */
+.navbar {
+  height: 74px;
+}
+
+.navbar .brand {
+  gap: 14px;
+  margin-right: 12px;
+}
+
+.navbar .brand-logo {
+  height: 56px !important;
+  width: auto;
+  max-width: 190px;
+  object-fit: contain;
+}
+
+/* Admin login brand logo */
+.login-box {
+  width: 400px;
+  padding: 42px 40px 40px;
+  text-align: center;
+}
+
+.login-box .form-label {
+  text-align: left;
+}
+
+.login-title,
+.login-sub {
+  text-align: center;
+}
+
+.login-brand-logo {
+  height: 96px;
+  width: auto;
+  max-width: 240px;
+  object-fit: contain;
+  margin: 0 auto 22px;
+  display: block;
+}
+
+/* Hide old emoji icon if it remains */
+.login-icon {
+  display: none !important;
+}
+/* === ADMIN BRAND FIX END === */
+
+
+/* === DASHBOARD VISUALISATION START === */
+.analytics-grid {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.95fr) minmax(360px, 1.05fr);
+  gap: 14px;
+  margin: 0 0 18px;
+}
+
+.analytics-card {
+  background:
+    radial-gradient(circle at top right, rgba(221,44,80,0.10), transparent 34%),
+    linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.012)),
+    var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 18px;
+  box-shadow: 0 14px 40px rgba(0,0,0,0.16);
+  min-height: 260px;
+}
+
+.analytics-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.analytics-title {
+  font-size: 10px;
+  font-weight: 850;
+  color: var(--t3);
+  text-transform: uppercase;
+  letter-spacing: 1.7px;
+  margin-bottom: 4px;
+}
+
+.analytics-sub {
+  font-size: 12px;
+  color: var(--t2);
+  line-height: 1.5;
+}
+
+.analytics-total-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 88px;
+  padding: 7px 11px;
+  border-radius: 999px;
+  border: 1px solid var(--border-accent);
+  background: var(--accent-dim);
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.donut-layout {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  gap: 18px;
+  align-items: center;
+}
+
+.member-donut {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: conic-gradient(var(--green) 0deg 0deg, var(--amber) 0deg 0deg, var(--red) 0deg 0deg, var(--border-2) 0deg 360deg);
+  position: relative;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06), 0 12px 32px rgba(0,0,0,0.25);
+}
+
+.member-donut::after {
+  content: '';
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  border: 1px solid rgba(85,96,121,0.25);
+  position: absolute;
+}
+
+.donut-center {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+}
+
+.donut-number {
+  font-family: var(--mono);
+  font-size: 24px;
+  font-weight: 900;
+  color: var(--t1);
+  line-height: 1;
+}
+
+.donut-label {
+  font-size: 9px;
+  color: var(--t3);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  margin-top: 5px;
+}
+
+.member-legend {
+  display: grid;
+  gap: 9px;
+}
+
+.legend-row {
+  display: grid;
+  grid-template-columns: 12px 1fr auto;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 10px;
+  border: 1px solid rgba(85,96,121,0.22);
+  border-radius: 11px;
+  background: rgba(12,15,30,0.28);
+}
+
+.legend-dot2 {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+
+.legend-name {
+  font-size: 12px;
+  color: var(--t2);
+  font-weight: 650;
+}
+
+.legend-value {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--t1);
+  font-weight: 850;
+}
+
+.risk-bars {
+  display: grid;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.risk-row {
+  display: grid;
+  grid-template-columns: 92px 1fr 54px;
+  gap: 10px;
+  align-items: center;
+}
+
+.risk-label {
+  font-size: 11px;
+  color: var(--t2);
+  font-weight: 750;
+}
+
+.risk-track {
+  height: 12px;
+  border-radius: 999px;
+  background: rgba(85,96,121,0.18);
+  overflow: hidden;
+  border: 1px solid rgba(85,96,121,0.18);
+}
+
+.risk-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.risk-fill.danger { background: linear-gradient(90deg, rgba(239,68,68,0.55), var(--red)); }
+.risk-fill.warn   { background: linear-gradient(90deg, rgba(245,158,11,0.45), var(--amber)); }
+.risk-fill.good   { background: linear-gradient(90deg, rgba(34,197,94,0.35), var(--green)); }
+
+.risk-count {
+  font-family: var(--mono);
+  color: var(--t1);
+  font-size: 12px;
+  font-weight: 850;
+  text-align: right;
+}
+
+.analytics-footnote {
+  margin-top: 14px;
+  font-size: 11px;
+  color: var(--t3);
+  line-height: 1.55;
+  padding-top: 12px;
+  border-top: 1px solid rgba(85,96,121,0.18);
+}
+
+.analytics-loading {
+  color: var(--t3);
+  font-size: 12px;
+  padding: 24px 0;
+  text-align: center;
+}
+
+/* Admin logo same size as Enrol/Live */
+.navbar .brand-logo {
+  height: 56px !important;
+  width: auto;
+  max-width: 190px;
+  object-fit: contain;
+}
+
+/* Admin login logo */
+.login-box {
+  width: 400px;
+  padding: 42px 40px 40px;
+  text-align: center;
+}
+
+.login-box .form-label { text-align: left; }
+.login-title, .login-sub { text-align: center; }
+
+.login-brand-logo {
+  height: 96px;
+  width: auto;
+  max-width: 240px;
+  object-fit: contain;
+  margin: 0 auto 22px;
+  display: block;
+}
+
+.login-icon {
+  display: none !important;
+}
+
+@media (max-width: 1050px) {
+  .analytics-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 620px) {
+  .donut-layout { grid-template-columns: 1fr; justify-items: center; }
+  .member-legend { width: 100%; }
+  .risk-row { grid-template-columns: 80px 1fr 44px; }
+}
+/* === DASHBOARD VISUALISATION END === */
+
+/* ── Access Log redesign ──────────────────────────────── */
+.log-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.log-stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.log-stat {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 13px 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+.log-stat::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+}
+.log-stat.s-total::before   { background: var(--accent); opacity: 0.6; }
+.log-stat.s-granted::before { background: var(--green); }
+.log-stat.s-denied::before  { background: var(--red); }
+.log-stat.s-door::before    { background: #0891B2; }
+
+.log-stat-label {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--t3);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 7px;
+}
+.log-stat-value {
+  font-family: var(--mono);
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--t1);
+  line-height: 1;
+}
+.log-stat.s-granted .log-stat-value { color: var(--green); }
+.log-stat.s-denied  .log-stat-value { color: var(--red); }
+.log-stat.s-door    .log-stat-value { color: #22D3EE; }
+
+/* Member avatar in logs */
+.log-avatar {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--accent-dim);
+  border: 1px solid var(--border-accent);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--accent);
+  flex-shrink: 0;
+  text-transform: uppercase;
+  vertical-align: middle;
+  margin-right: 8px;
+}
+.log-name-cell {
+  display: flex;
+  align-items: center;
+}
+
+/* Time cell */
+.log-time-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.log-time-main {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--t1);
+  font-weight: 600;
+}
+.log-time-date {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--t3);
+}
+
+/* Decision pills for log */
+.pill-log-granted {
+  background: rgba(34,197,94,0.12);
+  color: var(--green);
+  border: 1px solid rgba(34,197,94,0.28);
+}
+.pill-log-denied {
+  background: rgba(239,68,68,0.10);
+  color: var(--red);
+  border: 1px solid rgba(239,68,68,0.28);
+}
+.pill-log-manual {
+  background: rgba(8,145,178,0.10);
+  color: #22D3EE;
+  border: 1px solid rgba(8,145,178,0.28);
+}
+
+.log-door-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: rgba(34,197,94,0.12);
+  border: 1px solid rgba(34,197,94,0.28);
+  color: var(--green);
+  font-size: 11px;
+}
+
+@media (max-width: 900px) {
+  .log-stats-row { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 560px) {
+  .log-stats-row { grid-template-columns: 1fr 1fr; }
+  .log-filter-bar { gap: 5px; }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   MOBILE RESPONSIVE  ≤ 800px
+══════════════════════════════════════════════════════════════ */
+@media (max-width: 800px) {
+
+  /* Show hamburger, hide desktop page-nav tabs */
+  .hamburger { display: flex; }
+  .navbar .nav-tab { display: none; }
+  .navbar .nav-sep { display: none; }
+  .navbar .brand-sub { display: none; }
+  .navbar { padding: 0 14px; gap: 8px; }
+
+  /* Sidebar → full-height left drawer */
+  .sidebar {
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    z-index: 50;
+    width: 210px !important;
+    padding-top: 74px; /* clear navbar */
+    transform: translateX(-100%);
+    transition: transform 0.24s cubic-bezier(0.4,0,0.2,1);
+    box-shadow: none;
+  }
+  .sidebar.mobile-open {
+    transform: translateX(0);
+    box-shadow: 12px 0 40px rgba(0,0,0,0.45);
+  }
+
+  /* Content takes full width */
+  .content { padding: 14px 12px; }
+
+  /* Section header stacks on mobile */
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding-bottom: 12px;
+  }
+  .section-title { font-size: 17px; }
+
+  /* KPI grid: 2 columns */
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .kpi-value { font-size: 22px; }
+
+  /* Revenue row: single column */
+  #main-ui [style*="grid-template-columns:1fr 1fr"] { grid-template-columns: 1fr !important; }
+
+  /* Tables: horizontal scroll */
+  .tbl-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table { min-width: 480px; }
+
+  /* Management grid: single column */
+  .mgmt-grid { grid-template-columns: 1fr !important; }
+
+  /* Analytics grid: single column */
+  .analytics-grid { grid-template-columns: 1fr; }
+
+  /* Log filter bar: wrap */
+  .log-filter-bar { gap: 5px; }
+  .log-filter-bar .form-input,
+  .log-filter-bar .search-input { width: 100% !important; flex: 1 1 120px; }
+
+  /* Log stats row: 2 cols */
+  .log-stats-row { grid-template-columns: 1fr 1fr; }
+
+  /* Door control action grid: single column */
+  .dc-action-grid { grid-template-columns: 1fr; }
+  .dc-state { font-size: 32px; letter-spacing: -1px; }
+  .dc-icon { width: 66px; height: 66px; border-radius: 18px; }
+  .dc-hero { padding: 18px; }
+  .dc-meta-strip { flex-wrap: wrap; gap: 14px; padding-top: 14px; }
+  .dc-meta-item { flex: 1 1 42%; border-right: none; padding: 0; }
+
+  /* Form grid: single column */
+  .form-grid-2 { grid-template-columns: 1fr; }
+
+  /* Bottom bar: hide on mobile (saves space) */
+  .bottom-bar { display: none; }
+
+  /* Login box: full-width on small screens */
+  .login-box { width: 92vw; padding: 28px 20px; }
+}
+
+@media (max-width: 480px) {
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .log-stats-row { grid-template-columns: 1fr 1fr; }
+  .section-title { font-size: 16px; }
+  .content { padding: 10px 10px; }
+  .dc-emg-btns { flex-direction: column; }
+  .dc-emg-btns .btn { width: 100%; }
+}
+</style>
+</head>
+<body>
+
+<!-- Login -->
+<div class="login-overlay" id="login-overlay">
+  <div class="login-box">
+    <img class="login-brand-logo" src="/static/codeglofix.png" alt="CodeGloFix" onerror="this.style.display='none'">
+    <div class="login-title">Admin Access</div>
+    <div class="login-sub">CodeGloFix Access Control System</div>
+    <label class="form-label">Password</label>
+    <input class="form-input" type="password" id="login-pw" placeholder="Enter admin password">
+    <div style="margin-top:14px">
+      <button class="btn btn-primary" style="width:100%;justify-content:center;padding:10px" onclick="doLogin()">Sign In</button>
+    </div>
+    <div class="login-err" id="login-err"></div>
+  </div>
+</div>
+
+<!-- Main UI -->
+<div id="main-ui">
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <!-- Hamburger — visible only on mobile -->
+    <button class="hamburger" id="hamburger-btn" onclick="toggleSidebar()" aria-label="Menu" title="Menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <line x1="3" y1="6"  x2="21" y2="6"/>
+        <line x1="3" y1="12" x2="21" y2="12"/>
+        <line x1="3" y1="18" x2="21" y2="18"/>
+      </svg>
+    </button>
+    <a class="brand" href="/">
+      <img class="brand-logo" src="/static/codeglofix.png" alt="CodeGloFix" onerror="this.style.display='none'">
+      <div><div class="brand-name">CodeGloFix</div><div class="brand-sub">Admin Panel</div></div>
+    </a>
+    <div class="nav-sep"></div>
+    <a href="/enrol" class="nav-tab">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="16" y1="11" x2="22" y2="11"/></svg>Enrol
+    </a>
+    <a href="/enrol_remote" class="nav-tab">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="2" width="14" height="20" rx="2"/><circle cx="12" cy="17" r="1"/></svg>Remote Enrol
+    </a>
+    <a href="/admin" class="nav-tab active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Admin
+    </a>
+    <div class="nav-right">
+      <button class="btn btn-outline btn-sm" onclick="dg_logout()">Log Out</button>
+    </div>
+  </nav>
+
+  <!-- Mobile sidebar backdrop -->
+  <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="closeSidebar()"></div>
+
+  <div class="page">
+    <!-- Sidebar -->
+    <nav class="sidebar">
+      <div class="sidebar-section">Overview</div>
+      <button class="side-tab active" data-tab="dashboard" onclick="showTab('dashboard')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Dashboard
+      </button>
+      <div class="sidebar-section">Management</div>
+      <button class="side-tab" data-tab="members" onclick="showTab('members')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Members
+      </button>
+      <button class="side-tab" data-tab="payments" onclick="showTab('payments')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>Payments
+      </button>
+      <button class="side-tab" data-tab="plans" onclick="showTab('plans')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>Plans
+      </button>
+      <button class="side-tab" data-tab="access_logs" onclick="showTab('access_logs')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Access Logs
+      </button>
+      <div class="side-sep"></div>
+      <div class="sidebar-section">Security</div>
+      <button class="side-tab" data-tab="door" onclick="showTab('door')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="2" width="12" height="20" rx="2"/><circle cx="9" cy="12" r="1.5"/></svg>Door Control
+      </button>
+      <button class="side-tab" data-tab="config" onclick="showTab('config')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Configuration
+      </button>
+      <button class="side-tab" data-tab="settings" onclick="showTab('settings')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>Account
+      </button>
+    </nav>
+
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <div class="section active" id="tab-dashboard">
+        <div class="section-header">
+          <div><div class="section-title">Dashboard</div><div class="section-sub">Revenue & membership overview</div></div>
+          <button class="btn btn-outline btn-sm" onclick="loadDashboard()">↻ Refresh</button>
+        </div>
+
+        <!-- Revenue cards — full width row, large font for 7-8 digit amounts -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+          <div class="kpi" style="padding:18px 22px">
+            <div class="kpi-label">Today Revenue</div>
+            <div class="kpi-value v-accent" id="k-rev-today" style="font-size:clamp(22px,3.5vw,38px);letter-spacing:-1px;line-height:1.1;overflow-wrap:anywhere">—</div>
+          </div>
+          <div class="kpi" style="padding:18px 22px">
+            <div class="kpi-label">Month Revenue</div>
+            <div class="kpi-value v-accent" id="k-rev-month" style="font-size:clamp(22px,3.5vw,38px);letter-spacing:-1px;line-height:1.1;overflow-wrap:anywhere">—</div>
+          </div>
+        </div>
+
+        <div class="kpi-grid">
+          <div class="kpi kpi-green"><div class="kpi-label">Total Members</div><div class="kpi-value" id="k-total">—</div></div>
+          <div class="kpi kpi-green"><div class="kpi-label">Active</div><div class="kpi-value v-green" id="k-active">—</div></div>
+          <div class="kpi kpi-red"><div class="kpi-label">Expired</div><div class="kpi-value v-red" id="k-expired">—</div></div>
+          <div class="kpi kpi-amber"><div class="kpi-label">Expiring Soon</div><div class="kpi-value v-amber" id="k-expiring">—</div></div>
+          <div class="kpi"><div class="kpi-label">Today Entries</div><div class="kpi-value" id="k-today">—</div></div>
+          <div class="kpi"><div class="kpi-label">Door Status</div><div class="kpi-value" style="font-size:14px;padding-top:4px" id="k-door">—</div></div>
+        </div>
+        <!-- DASHBOARD VISUALISATION -->
+        <div class="analytics-grid" id="dashboard-analytics">
+          <div class="analytics-card">
+            <div class="analytics-head">
+              <div>
+                <div class="analytics-title">Membership Health</div>
+                <div class="analytics-sub">Visual summary of active, expiring, expired and unpaid members.</div>
+              </div>
+              <span class="analytics-total-pill" id="membership-total-pill">Total —</span>
+            </div>
+
+            <div class="donut-layout">
+              <div class="member-donut" id="membership-donut">
+                <div class="donut-center">
+                  <div class="donut-number" id="donut-active-percent">—%</div>
+                  <div class="donut-label">Active</div>
+                </div>
+              </div>
+              <div class="member-legend" id="membership-legend">
+                <div class="analytics-loading">Loading membership health…</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="analytics-card">
+            <div class="analytics-head">
+              <div>
+                <div class="analytics-title">Expiry Risk Overview</div>
+                <div class="analytics-sub">Grouped expiry risk for quick follow-up decisions.</div>
+              </div>
+              <span class="analytics-total-pill" id="risk-total-pill">Risk —</span>
+            </div>
+            <div class="risk-bars" id="expiry-risk-bars">
+              <div class="analytics-loading">Loading expiry risk…</div>
+            </div>
+            <div class="analytics-footnote">
+              For a large gym database, grouped risk buckets are better than showing hundreds of members in one chart. The detailed table below stays focused on actionable expiring members.
+            </div>
+          </div>
+        </div>
+        <div class="tbl-wrap">
+          <div class="tbl-head"><span class="tbl-title" id="expiring-table-title">⚠ Expiring Memberships</span></div>
+          <table><thead><tr><th>Member</th><th>Phone</th><th>Plan</th><th>Valid Until</th><th>Days Left</th></tr></thead>
+          <tbody id="expiring-list"><tr class="empty-row"><td colspan="5">Loading…</td></tr></tbody></table>
+        </div>
+      </div>
+
+      <!-- MEMBERS -->
+      <div class="section" id="tab-members">
+        <div class="section-header">
+          <div><div class="section-title">Members</div><div class="section-sub">Registered gym members</div></div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input class="search-input" id="member-search" placeholder="Search members…" oninput="filterMembers()">
+            <button class="btn btn-outline btn-sm" onclick="loadMembers()">↻</button>
+          </div>
+        </div>
+        <div class="tbl-wrap">
+          <table><thead><tr><th>Name</th><th>Member ID</th><th>Phone</th><th>Role</th><th>Access Type</th><th>Payment / Validity</th><th>Days / Access</th><th>Last Entry</th><th>Actions</th></tr></thead>
+          <tbody id="member-list"><tr class="empty-row"><td colspan="9">Loading…</td></tr></tbody></table>
+        </div>
+
+        <!-- Management panels: Edit Details | Rename | Role | Remove — always visible -->
+        <div class="mgmt-grid">
+
+          <!-- Edit Details (Member ID + Phone) -->
+          <div class="form-card" id="edit-details-card">
+            <div class="form-card-title" style="color:#22C55E">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 8h10"/><path d="M7 12h6"/></svg>
+              Edit Details
+            </div>
+            <p style="font-size:11px;color:var(--t3);margin-bottom:14px;line-height:1.6">Update Member ID &amp; phone. Name/role/removal use their own panels.<br>Click ✎ on a row above to pre-fill.</p>
+            <div class="form-group">
+              <label class="form-label">Member Name</label>
+              <input class="form-input" type="text" id="edit-name" placeholder="Member name…" list="edit-member-list" autocomplete="off">
+              <datalist id="edit-member-list"></datalist>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Member ID</label>
+              <input class="form-input" type="text" id="edit-member-code" placeholder="GYM001, M001, CARD-005" autocomplete="off">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Phone <span style="color:var(--t3);font-weight:500">(optional)</span></label>
+              <input class="form-input" type="tel" id="edit-phone" placeholder="07XXXXXXXX" autocomplete="off">
+            </div>
+            <button class="btn btn-success" style="width:100%;justify-content:center" onclick="saveMemberDetails()">Save Details</button>
+          </div>
+
+          <!-- Rename -->
+          <div class="form-card" id="rename-card">
+            <div class="form-card-title" style="color:#38BDF8">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              Rename Member
+            </div>
+            <p style="font-size:11px;color:var(--t3);margin-bottom:14px;line-height:1.6">Updates name in DB, access logs &amp; face embedding key.<br>Click ✏ on a row above to pre-fill.</p>
+            <div class="form-group">
+              <label class="form-label">Current Name</label>
+              <input class="form-input" type="text" id="rename-old" placeholder="Current name…" list="rename-member-list" autocomplete="off">
+              <datalist id="rename-member-list"></datalist>
+            </div>
+            <div class="form-group">
+              <label class="form-label">New Name</label>
+              <input class="form-input" type="text" id="rename-new" placeholder="New name…" autocomplete="off">
+            </div>
+            <button class="btn btn-info" style="width:100%;justify-content:center" onclick="renameMember()">Apply Rename</button>
+          </div>
+
+          <!-- Role -->
+          <div class="form-card" id="role-card">
+            <div class="form-card-title" style="color:var(--amber)">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>
+              Set Member Role
+            </div>
+            <p style="font-size:11px;color:var(--t3);margin-bottom:14px;line-height:1.6">
+              <span style="color:var(--accent);font-weight:600">Owner / Staff</span> — door always opens, no payment needed.<br>
+              <span style="color:var(--t2)">Member</span> — requires valid payment.<br>
+              Click ⚙ on a row above to pre-fill.
+            </p>
+            <div class="form-group">
+              <label class="form-label">Member Name</label>
+              <input class="form-input" type="text" id="role-name" placeholder="Member name…" list="role-member-list" autocomplete="off">
+              <datalist id="role-member-list"></datalist>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Role</label>
+              <select class="form-select" id="role-select">
+                <option value="member">Member — requires valid payment</option>
+                <option value="staff">Staff — door always opens</option>
+                <option value="owner">Owner — door always opens</option>
+              </select>
+            </div>
+            <button class="btn btn-success" style="width:100%;justify-content:center" onclick="setMemberRole()">Apply Role</button>
+          </div>
+
+          <!-- Remove -->
+          <div class="form-card" id="remove-card">
+            <div class="form-card-title" style="color:var(--red)">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+              Remove Member
+            </div>
+            <p style="font-size:11px;color:var(--t3);margin-bottom:14px;line-height:1.6">Deletes face embedding &amp; deactivates the account.<br><span style="color:var(--t2)">Access history is preserved.</span><br>Click ✕ on a row above to pre-fill.</p>
+            <div class="form-group">
+              <label class="form-label">Member Name to Remove</label>
+              <input class="form-input" type="text" id="remove-name" placeholder="Member name…" list="remove-member-list" autocomplete="off">
+              <datalist id="remove-member-list"></datalist>
+            </div>
+            <div style="background:var(--red-dim);border:1px solid rgba(239,68,68,0.2);border-radius:var(--rs);padding:9px 12px;margin-bottom:14px;font-size:11px;color:#FCA5A5;line-height:1.5">
+              ⚠ Face scan deleted — member cannot enter until re-enrolled.
+            </div>
+            <button class="btn btn-danger" style="width:100%;justify-content:center" onclick="removeMemberByForm()">Remove Member</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAYMENTS -->
+      <div class="section" id="tab-payments">
+        <div class="section-header">
+          <div><div class="section-title">Payments</div><div class="section-sub">Record &amp; track membership payments</div></div>
+        </div>
+        <div class="form-card" style="margin-bottom:16px">
+          <div class="form-card-title">Record Payment</div>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Member Name *</label>
+              <input class="form-input" type="text" id="pay-member" placeholder="Member name" list="pay-member-list" autocomplete="off">
+              <datalist id="pay-member-list"></datalist>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Plan</label>
+              <select class="form-select" id="pay-plan"><option value="">— Select plan —</option></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Amount (Rs.) *</label>
+              <input class="form-input" type="number" id="pay-amount" placeholder="e.g. 5000">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Payment Method</label>
+              <select class="form-select" id="pay-method">
+                <option value="cash">Cash</option>
+                <option value="card">Card</option>
+                <option value="transfer">Bank Transfer</option>
+                <option value="online">Online</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Valid From *</label>
+              <input class="form-input" type="date" id="pay-from">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Valid Until *</label>
+              <input class="form-input" type="date" id="pay-until">
+            </div>
+            <div class="form-group" style="grid-column:1/-1">
+              <label class="form-label">Note</label>
+              <input class="form-input" type="text" id="pay-note" placeholder="Optional note">
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary" onclick="savePayment()">Save Payment</button>
+            <button class="btn btn-outline" onclick="autoFillDates()">Auto-fill from Plan</button>
+          </div>
+        </div>
+        <div class="tbl-wrap">
+          <div class="tbl-head"><span class="tbl-title">Payment History</span></div>
+          <table><thead><tr><th>Member</th><th>Plan</th><th>Amount</th><th>Method</th><th>Valid From</th><th>Valid Until</th><th>Date</th></tr></thead>
+          <tbody id="payments-list"><tr class="empty-row"><td colspan="7">Loading…</td></tr></tbody></table>
+        </div>
+      </div>
+
+      <!-- PLANS -->
+      <div class="section" id="tab-plans">
+        <div class="section-header">
+          <div><div class="section-title">Plans</div><div class="section-sub">Membership plan pricing — changes apply to new payments only; existing payment history is never altered</div></div>
+        </div>
+        <div class="form-card" style="margin-bottom:16px">
+          <div class="form-card-title">Add New Plan</div>
+          <div class="form-grid-2">
+            <div class="form-group"><label class="form-label">Plan Name *</label><input class="form-input" type="text" id="plan-new-name" placeholder="e.g. Monthly"></div>
+            <div class="form-group"><label class="form-label">Duration (days) *</label><input class="form-input" type="number" id="plan-new-days" placeholder="30"></div>
+            <div class="form-group"><label class="form-label">Price (Rs.) *</label><input class="form-input" type="number" id="plan-new-price" placeholder="3000"></div>
+            <div class="form-group"><label class="form-label">Description</label><input class="form-input" type="text" id="plan-new-desc" placeholder="Optional description"></div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary" onclick="createPlan()">Add Plan</button>
+          </div>
+        </div>
+        <div class="tbl-wrap">
+          <div class="tbl-head"><span class="tbl-title">Existing Plans</span></div>
+          <table><thead><tr><th>Name</th><th>Duration (days)</th><th>Price (Rs.)</th><th>Description</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="plans-list"><tr class="empty-row"><td colspan="6">Loading…</td></tr></tbody></table>
+        </div>
+      </div>
+
+      <!-- ACCESS LOGS -->
+      <div class="section" id="tab-access_logs">
+        <div class="section-header">
+          <div>
+            <div class="section-title">Access Logs</div>
+            <div class="section-sub">Door entry history — granted, denied and manual actions</div>
+          </div>
+          <div class="log-filter-bar">
+            <button class="btn btn-outline btn-sm" onclick="setLogToday()">Today</button>
+            <button class="btn btn-outline btn-sm" onclick="setLogWeek()">This Week</button>
+            <input type="date" class="form-input" id="log-from" style="width:130px">
+            <span style="color:var(--t3);font-size:11px;flex-shrink:0">→</span>
+            <input type="date" class="form-input" id="log-to" style="width:130px">
+            <input class="search-input" id="log-name" placeholder="Search member…" style="width:148px">
+            <button class="btn btn-outline btn-sm" onclick="loadLogs()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:11px;height:11px"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              Filter
+            </button>
+            <button class="btn btn-outline btn-sm" onclick="exportLogs()" title="Export filtered results as CSV">↓ CSV</button>
+          </div>
+        </div>
+
+        <!-- Stats row — shown after first load -->
+        <div class="log-stats-row" id="log-stats-row" style="display:none">
+          <div class="log-stat s-total">
+            <div class="log-stat-label">Total Entries</div>
+            <div class="log-stat-value" id="ls-total">—</div>
+          </div>
+          <div class="log-stat s-granted">
+            <div class="log-stat-label">Granted</div>
+            <div class="log-stat-value" id="ls-granted">—</div>
+          </div>
+          <div class="log-stat s-denied">
+            <div class="log-stat-label">Denied</div>
+            <div class="log-stat-value" id="ls-denied">—</div>
+          </div>
+          <div class="log-stat s-door">
+            <div class="log-stat-label">Door Opened</div>
+            <div class="log-stat-value" id="ls-door">—</div>
+          </div>
+        </div>
+
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:88px">Time</th>
+                <th>Member</th>
+                <th style="width:115px">Decision</th>
+                <th>Reason</th>
+                <th style="width:64px;text-align:center">Door</th>
+              </tr>
+            </thead>
+            <tbody id="log-list"><tr class="empty-row"><td colspan="5">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- DOOR CONTROL -->
+      <div class="section" id="tab-door">
+        <div class="section-header">
+          <div>
+            <div class="section-title">Door Control</div>
+            <div class="section-sub">Relay status, manual access and emergency lock</div>
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="loadDoorStatus()">↻ Refresh</button>
+        </div>
+
+        <div class="door-pro-grid">
+
+          <!-- Left: live door state card -->
+          <div class="door-pro-card" id="door-state-card">
+            <div class="door-pro-top">
+              <div>
+                <div class="door-pro-kicker" id="door-status-kicker">Door State</div>
+                <div class="door-pro-title" id="door-status-text">Locked</div>
+                <div class="door-pro-sub" id="door-status-sub">
+                  Relay is ready. Face recognition will open the door for authorised members only.
+                </div>
+              </div>
+              <div class="door-state-ring locked" id="door-state-ring">
+                <span class="door-dot locked" id="door-dot"></span>
+              </div>
+            </div>
+
+            <div class="door-pro-status-row">
+              <span class="door-pro-pill warn" id="door-mode-badge">Connecting…</span>
+              <span class="door-pro-pill good" id="door-emergency-state">Emergency: Off</span>
+              <span class="door-pro-pill good" id="door-live-note">System Ready</span>
+            </div>
+
+            <div class="door-meta-grid">
+              <div class="door-meta">
+                <div class="door-meta-label">Relay Port</div>
+                <div class="door-meta-value" id="door-port-val">—</div>
+              </div>
+              <div class="door-meta">
+                <div class="door-meta-label">Baudrate</div>
+                <div class="door-meta-value" id="door-baud-val">—</div>
+              </div>
+              <div class="door-meta">
+                <div class="door-meta-label">Last Open</div>
+                <div class="door-meta-value" id="door-last-open-val">—</div>
+              </div>
+              <div class="door-meta">
+                <div class="door-meta-label">Last Action</div>
+                <div class="door-meta-value" id="door-last-action-val">—</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: manual open card -->
+          <div class="door-manual-card">
+            <div class="door-manual-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M15 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10"/>
+                <polyline points="15 8 19 12 15 16"/>
+                <line x1="19" y1="12" x2="9" y2="12"/>
+              </svg>
+            </div>
+            <div class="door-manual-kicker">Manual Access</div>
+            <div class="door-manual-heading">Open Door</div>
+            <div class="door-manual-sub">Override face recognition and open the door immediately for a member.</div>
+            <button class="btn btn-success door-manual-btn" onclick="manualOpen()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M15 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10"/>
+                <polyline points="15 8 19 12 15 16"/>
+                <line x1="19" y1="12" x2="9" y2="12"/>
+              </svg>
+              Open Door
+            </button>
+            <div class="door-manual-note">
+              Sends a single OPEN signal to the relay controller. The relay hold time is configured in the controller firmware.
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Emergency Lock — full width below -->
+        <div class="emergency-pro-card" id="emergency-card">
+          <div class="emergency-pro-head">
+            <div class="emergency-pro-icon" id="emergency-icon">🔒</div>
+            <div>
+              <div class="emergency-pro-title" id="emergency-title">Emergency Lock</div>
+              <div class="emergency-pro-sub">Blocks all automatic face-recognition door openings</div>
+            </div>
+            <span id="emergency-badge" class="door-pro-pill danger" style="display:none;margin-left:auto">ACTIVE</span>
+          </div>
+
+          <div class="emergency-pro-desc" id="emergency-desc">
+            When enabled, face recognition cannot open the door. All access attempts are denied and logged.
+          </div>
+
+          <div class="door-action-buttons">
+            <button class="btn btn-danger" id="btn-emg-lock" onclick="setEmergency(true)">Enable Emergency Lock</button>
+            <button class="btn btn-success" id="btn-emg-unlock" onclick="setEmergency(false)" style="display:none">Disable Emergency Lock</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONFIGURATION -->
+      <div class="section" id="tab-config">
+        <div class="section-header">
+          <div><div class="section-title">Configuration</div><div class="section-sub">Gate and system parameters</div></div>
+        </div>
+        <div class="form-card" style="max-width:680px">
+          <div class="form-card-title">Gate Settings</div>
+          <div class="form-grid-2">
+            <div class="form-group"><label class="form-label">Min Face Area (px²)</label><input class="form-input" type="number" id="cfg-area" placeholder="10000"></div>
+            <div class="form-group"><label class="form-label">Center ROI (0.4–1.0)</label><input class="form-input" type="number" step="0.05" id="cfg-roi" placeholder="0.75"></div>
+            <div class="form-group"><label class="form-label">Gate Cooldown (s)</label><input class="form-input" type="number" id="cfg-cooldown" placeholder="5"></div>
+            <div class="form-group"><label class="form-label">Expiry Warning (days)</label><input class="form-input" type="number" id="cfg-warn-days" placeholder="7"></div>
+            <div class="form-group"><label class="form-label">Controller Baudrate</label><input class="form-input" type="number" id="cfg-baudrate" placeholder="115200"></div>
+            <div class="form-group"><label class="form-label">Controller Port</label><input class="form-input" type="text" id="cfg-relay-port" placeholder="auto"></div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary" onclick="saveGateConfig()">Save Configuration</button>
+            <button class="btn btn-outline" onclick="loadGateConfig()">Reset</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ACCOUNT -->
+      <div class="section" id="tab-settings">
+        <div class="section-header">
+          <div><div class="section-title">Account</div><div class="section-sub">Admin password management</div></div>
+        </div>
+        <div class="form-card" style="max-width:400px">
+          <div class="form-card-title">Change Password</div>
+          <div class="form-group"><label class="form-label">Current Password</label><input class="form-input" type="password" id="pw-current" placeholder="Current password"></div>
+          <div class="form-group"><label class="form-label">New Password</label><input class="form-input" type="password" id="pw-new" placeholder="New password (min 6 chars)"></div>
+          <div class="form-group"><label class="form-label">Confirm New Password</label><input class="form-input" type="password" id="pw-confirm" placeholder="Confirm new password"></div>
+          <button class="btn btn-primary" onclick="changePassword()">Update Password</button>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /page -->
+
+  <div class="bottom-bar">
+    <span>CodeGloFix Admin Panel</span>
+    <span style="margin-left:auto">CodeGloFix &copy; <span id="foot-year"></span> CodeGloFix</span>
+  </div>
+
+</div><!-- /main-ui -->
+
+<div id="toast"></div>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/admin.js?v=clean_no_confidence_2"></script>
+<script>
+// ── Mobile sidebar toggle ─────────────────────────────────────────────────────
+function toggleSidebar() {
+  const sidebar  = document.querySelector('.sidebar');
+  const backdrop = document.getElementById('sidebar-backdrop');
+  const isOpen   = sidebar && sidebar.classList.contains('mobile-open');
+  isOpen ? closeSidebar() : openSidebar();
+}
+
+function openSidebar() {
+  const sidebar  = document.querySelector('.sidebar');
+  const backdrop = document.getElementById('sidebar-backdrop');
+  if (sidebar)  sidebar.classList.add('mobile-open');
+  if (backdrop) backdrop.classList.add('visible');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeSidebar() {
+  const sidebar  = document.querySelector('.sidebar');
+  const backdrop = document.getElementById('sidebar-backdrop');
+  if (sidebar)  sidebar.classList.remove('mobile-open');
+  if (backdrop) backdrop.classList.remove('visible');
+  document.body.style.overflow = '';
+}
+
+// Close sidebar after tapping a side-tab on mobile
+document.querySelectorAll('.side-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (window.innerWidth <= 800) closeSidebar();
+  });
+});
+
+// Close sidebar on Escape key
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeSidebar();
+});
+
+// ── PWA service worker registration ──────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => console.log('[PWA] Service worker registered:', reg.scope))
+      .catch(err => console.log('[PWA] SW registration skipped:', err));
+  });
+}
+</script>
+</body>
+</html>

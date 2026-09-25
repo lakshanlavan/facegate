@@ -1,0 +1,14 @@
+[Unit]
+Description=CodeGloFix database + metadata backup
+After=codeglofix-access@%i.service
+Wants=codeglofix-access@%i.service
+
+[Service]
+Type=oneshot
+User=%i
+WorkingDirectory=/home/%i/Desktop/gym_face_access/gym_face_access
+# Keep USB path ($USER) correct and let the script find the right home.
+Environment=HOME=/home/%i
+ExecStart=/home/%i/Desktop/gym_face_access/gym_face_access/backup_db.sh
+Nice=10
+IOSchedulingClass=idle

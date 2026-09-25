@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=CodeGloFix Admin
+GenericName=Admin Portal
+Comment=Open the CodeGloFix Admin Portal (login required) — staff/owner only
+Exec=__PROJECT_DIR__/kiosk/open_admin.sh
+Icon=__ICON__
+Terminal=false
+Categories=Utility;Office;
+StartupNotify=true
