@@ -18,6 +18,24 @@ door control.
 - Production tooling: systemd services, nginx TLS reverse proxy, backups,
   health checks, log rotation, data export/import
 
+## Demo
+
+[![Face recognition demo: click to play](docs/images/face-recognition-demo-thumb.webp)](docs/images/face-recognition-demo.mp4)
+
+▶️ **[Watch the face-recognition demo (MP4, 43 s)](docs/images/face-recognition-demo.mp4)**. It shows member
+enrolment with multi-angle face captures, the live gate view with on-screen positioning guidance, and
+on-site testing with the entrance display mounted at a real gym door.
+
+## Screenshots
+
+| Admin dashboard | Member enrolment |
+|---|---|
+| ![Admin dashboard with revenue and membership health](docs/images/gym-access-dashboard.webp) | ![Member enrolment with live camera and face captures](docs/images/gym-access-enrolment.webp) |
+| **Access logs** | **Payments** |
+| ![Access logs with granted and denied entries](docs/images/gym-access-logs.webp) | ![Payment recording and history](docs/images/gym-access-payments.webp) |
+| **Membership plans** | **Door control** |
+| ![Membership plan management](docs/images/gym-access-plans.webp) | ![Door relay control panel](docs/images/gym-access-door-control.webp) |
+
 ## Tech stack
 
 Python 3.10–3.12 · FastAPI · Uvicorn · Jinja2 · OpenCV · InsightFace ·
